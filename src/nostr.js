@@ -1,10 +1,15 @@
 import NDK, { NDKNip07Signer } from "@nostr-dev-kit/ndk";
 import { showConnectionStatus } from "./ui.js";
 
-let ndk;
-let nip07signer;
+export let ndk; // Module-level variable for NDK instance
+export let nip07signer; // Module-level variable for the signer
 
-async function initializeNDK() {
+export async function initializeNDK() {
+  if (ndk) {
+    console.log("NDK instance already initialized");
+    return ndk;
+  }
+
   nip07signer = new NDKNip07Signer({
     waitTimeout: 2000, // waitTimeout should be in milliseconds
   });
@@ -12,7 +17,7 @@ async function initializeNDK() {
   ndk = new NDK({
     explicitRelayUrls: ["wss://nostrpub.yeghro.site"],
     signer: nip07signer,
-    autoConnectUserRelays: false, // Ensure auto connect is enabled
+    autoConnectUserRelays: false, // Manually handle user relays connection
     autoFetchUserMutelist: true, // Ensure auto fetch is enabled
   });
 
@@ -52,14 +57,18 @@ async function initializeNDK() {
     try {
       const profile = await user.fetchProfile();
       console.log("Active user's profile:", profile);
+
+      // Fetch the active user's follow list
+      const follows = await user.follows();
+      console.log("Active user's follows:", follows);
     } catch (profileError) {
-      console.error("Error fetching profile:", profileError);
-      showConnectionStatus("Error fetching profile");
+      console.error("Error fetching profile or follows list:", profileError);
+      showConnectionStatus("Error fetching profile or follows list");
     }
   } catch (error) {
     console.error("Error during initialization:", error);
     showConnectionStatus("Error during initialization");
   }
-}
 
-export { initializeNDK };
+  return ndk;
+}
