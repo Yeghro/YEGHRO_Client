@@ -1,5 +1,6 @@
 import { ndk, initializeNDK } from "./nostr.js";
 import { NDKKind } from "@nostr-dev-kit/ndk"; // Assuming this is how NDKKind is imported
+import { displayEvent, displayProfile } from "./ui.js";
 
 const BATCH_SIZE = 10; // Define a suitable batch size
 
@@ -29,15 +30,12 @@ export async function subscribeToEventsForFollows() {
     // Extract public keys from the follow list
     const pubkeys = Array.from(follows).map((follow) => follow.pubkey);
 
-    // Fetch kind 0 events (profile information) for each pubkey
-    await fetchProfileEvents(pubkeys);
-
     // Calculate the timestamp for one week ago
-    const oneWeekAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
+    const oneWeekAgo = Math.floor(Date.now() / 1000) - 2 * 24 * 60 * 60;
 
-    // Prepare filters for subscribing to events of kind 1 for all pubkeys in the follow list
+    // Prepare filters for subscribing to both kind 0 (Metadata) and kind 1 (Text) events
     const filters = pubkeys.map((pubkey) => ({
-      kinds: [NDKKind.Text],
+      kinds: [NDKKind.Metadata, NDKKind.Text],
       authors: [pubkey],
       since: oneWeekAgo,
     }));
@@ -49,7 +47,7 @@ export async function subscribeToEventsForFollows() {
 
     // Function to create subscriptions in batches
     const createSubscriptionBatch = (batch) => {
-      const subscription = ndk.subscribe(batch);
+      const subscription = ndk.subscribe(batch, { closeOnEose: true });
       console.log("Subscription started with filters:", batch);
 
       // Add detailed event logging
@@ -57,6 +55,10 @@ export async function subscribeToEventsForFollows() {
         console.log("Received event from subscription:", event);
         if (event.kind === NDKKind.Text) {
           console.log("Text Event content:", event.content);
+          displayEvent(event);
+        } else if (event.kind === NDKKind.Metadata) {
+          console.log("Metadata Event content:", event.content);
+          displayProfile(event);
         }
       });
 
@@ -74,7 +76,7 @@ export async function subscribeToEventsForFollows() {
     // Process filters in batches
     for (let i = 0; i < filtersArray.length; i += BATCH_SIZE) {
       const batch = filtersArray.slice(i, i + BATCH_SIZE);
-      return createSubscriptionBatch(batch); // Return the subscription object
+      createSubscriptionBatch(batch);
     }
 
     console.log("All subscriptions started");
@@ -93,10 +95,11 @@ async function fetchProfileEvents(pubkeys) {
       };
 
       const events = await ndk.fetchEvents(filter);
-      if (events && events.length > 0) {
-        console.log("Fetched profile event for pubkey:", pubkey, events[0]);
+      if (events && events.size > 0) {
+        const eventArray = Array.from(events);
+        console.log("Fetched profile event for pubkey:", pubkey, eventArray[0]);
         // Call displayProfile function with the fetched event
-        displayProfile(events[0]);
+        displayProfile(eventArray[0]);
       } else {
         console.log("No profile event found for pubkey:", pubkey);
       }

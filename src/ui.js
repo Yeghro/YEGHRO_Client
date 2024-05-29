@@ -32,6 +32,8 @@ export function displayEvent(event) {
   if (event.content.match(/\.(jpeg|jpg|gif|png)$/)) {
     const imageElement = document.createElement("img");
     imageElement.src = event.content;
+    imageElement.style.maxWidth = "500px"; // Set maximum width
+    imageElement.style.maxHeight = "500px"; // Set maximum height
     contentElement.appendChild(imageElement);
   } else {
     contentElement.textContent = event.content;
@@ -75,6 +77,8 @@ export function displayProfile(event) {
   if (profileData.picture) {
     const img = document.createElement("img");
     img.src = profileData.picture;
+    img.style.maxWidth = "150px"; // Set maximum width
+    img.style.maxHeight = "150px"; // Set maximum height
     pictureElement.appendChild(img);
   }
 
