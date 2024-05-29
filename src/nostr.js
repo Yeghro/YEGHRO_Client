@@ -21,19 +21,6 @@ export async function initializeNDK() {
     autoFetchUserMutelist: true, // Ensure auto fetch is enabled
   });
 
-  // Set up event listeners for the NDK instance
-  ndk.on("event", (event, relay) => {
-    console.log("Received event:", event);
-  });
-
-  ndk.on("signer:ready", (signer) => {
-    console.log("Signer is ready:", signer);
-  });
-
-  ndk.on("event:invalid-sig", (event) => {
-    console.warn("Invalid signature for event:", event);
-  });
-
   try {
     // Ensure the signer is ready and retrieve the user
     const user = await ndk.signer.blockUntilReady();
