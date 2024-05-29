@@ -1,7 +1,7 @@
 import { ndk, initializeNDK } from "./nostr.js";
 import { NDKKind } from "@nostr-dev-kit/ndk"; // Assuming this is how NDKKind is imported
-import { displayEvent, displayProfile } from "./ui.js";
-
+import { displayEvent } from "./ui/eventDisplay.js";
+import { displayProfile } from "./ui/profileDisplay.js";
 const BATCH_SIZE = 10; // Define a suitable batch size
 
 export async function subscribeToEventsForFollows() {

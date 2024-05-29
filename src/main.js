@@ -3,11 +3,10 @@ import {
   showConnectionStatus,
   displayEvent,
   displayProfile,
-} from "./ui.js";
+} from "./ui/index.js"; // Adjusted import path
 import { initializeNDK } from "./nostr.js";
 import { subscribeToEventsForFollows } from "./eventFetcher.js";
 
-// Function to handle login button click
 async function handleLoginButtonClick() {
   await initializeNDK();
   showConnectionStatus("Connected");
@@ -15,17 +14,14 @@ async function handleLoginButtonClick() {
 
   if (subscription) {
     subscription.on("event", (event) => {
-      console.log("Received event:", event); // Add logging for all received events
+      console.log("Received event:", event);
       if (event.kind === 1) {
-        // Check if the event is of kind 1 (Text event)
-        displayEvent(event); // Call displayEvent function with the event object
+        displayEvent(event);
       } else if (event.kind === 0) {
-        // Check if the event is of kind 0 (Metadata event)
-        displayProfile(event); // Call displayProfile function with the event object
+        displayProfile(event);
       }
     });
   }
 }
 
-// Set up login button event listener
 setupLoginButton(handleLoginButtonClick);

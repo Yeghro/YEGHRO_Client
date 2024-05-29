@@ -1,10 +1,15 @@
 import NDK, { NDKNip07Signer, NDKRelayList } from "@nostr-dev-kit/ndk";
-import { showConnectionStatus, displayProfile } from "./ui.js";
+import { showConnectionStatus } from "./ui/index.js"; // Adjusted import path
+import {
+  handleFetchedEvents,
+  subscribeToEventsForFollows,
+} from "./eventManager.js";
 
 export let ndk; // Module-level variable for NDK instance
 export let nip07signer; // Module-level variable for the signer
 
-const DEFAULT_RELAYS = ["wss://nostrpub.yeghro.site"];
+const DEFAULT_RELAYS = ["wss://nostrpub.yeghro.site", "wss://relay.damus.io"];
+const metadataMap = new Map(); // Map to store metadata
 
 export async function initializeNDK() {
   if (ndk) {
@@ -23,20 +28,16 @@ export async function initializeNDK() {
     autoFetchUserMutelist: true, // Ensure auto fetch is enabled
   });
 
-  // Ensure the signer is ready and retrieve the user
-  const user = await ndk.signer.blockUntilReady();
-  console.log("User is ready:", user);
-
-  // Manually set the NDK instance on the user object if necessary
-  if (!user.ndk) {
-    user.ndk = ndk;
-  }
-
-  // Set the active user
-  ndk.activeUser = user;
-  console.log("Active user set in NDK:", ndk.activeUser);
-
   try {
+    // Ensure the signer is ready and retrieve the user
+    await ndk.signer.blockUntilReady();
+    const user = await ndk.signer.user();
+    console.log("User is ready:", user);
+
+    // Set the active user
+    ndk.activeUser = user;
+    console.log("Active user set in NDK:", ndk.activeUser);
+
     // Initial connection to default relays
     await ndk.connect();
     console.log("Connected to default Nostr relays!");
@@ -51,7 +52,7 @@ export async function initializeNDK() {
 
     if (userMetadata) {
       console.log("Active user's metadata:", userMetadata);
-      displayProfile(userMetadata);
+      metadataMap.set(user.pubkey, userMetadata); // Store user metadata
     }
 
     // Fetch the active user's follow list and subscribe to their events
@@ -61,10 +62,7 @@ export async function initializeNDK() {
     // Extract public keys from the follow list
     const pubkeys = Array.from(follows).map((follow) => follow.pubkey);
 
-    // Subscribe to events from the follow list
-    subscribeToEventsForFollows(pubkeys);
-
-    // Fetch metadata for the follow list
+    // Fetch metadata for the follow list and store in metadataMap
     for (const pubkey of pubkeys) {
       const followMetadata = await ndk.fetchEvent({
         kinds: [0], // Kind 0 for metadata
@@ -74,29 +72,16 @@ export async function initializeNDK() {
 
       if (followMetadata) {
         console.log(`Fetched metadata for pubkey ${pubkey}:`, followMetadata);
-        displayProfile(followMetadata);
+        metadataMap.set(pubkey, followMetadata); // Store follow metadata
       }
     }
+
+    // Subscribe to events from the follow list
+    subscribeToEventsForFollows(ndk, pubkeys, metadataMap);
   } catch (error) {
     console.error("Error during initialization:", error);
     showConnectionStatus("Error during initialization");
   }
 
   return ndk;
-}
-
-async function subscribeToEventsForFollows(pubkeys) {
-  const oneWeekAgo = Math.floor(Date.now() / 1000) - 1 * 24 * 60 * 60;
-
-  const filters = pubkeys.map((pubkey) => ({
-    kinds: [1], // Kind 1 for text events
-    authors: [pubkey],
-    since: oneWeekAgo,
-  }));
-
-  const subscription = ndk.subscribe(filters, { closeOnEose: true });
-  subscription.on("event", (event) => {
-    console.log("Received event:", event);
-    // Add your event handling logic here
-  });
 }
