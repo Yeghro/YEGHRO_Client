@@ -1,25 +1,51 @@
-import { displayEvent } from "./ui/index.js";
+import { displayEvent, storeMetadata } from "./ui/index.js"; // Adjusted import path
 
-export async function subscribeToEventsForFollows(ndk, pubkeys, metadataMap) {
-  const oneWeekAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
+const BATCH_SIZE = 10; // Define a suitable batch size
 
-  const filters = pubkeys.map((pubkey) => ({
-    kinds: [1], // Kind 1 for text events
-    authors: [pubkey],
-    since: oneWeekAgo,
-  }));
+export async function fetchEventsAndMetadataInBatches(ndk, pubkeys) {
+  const oneWeekAgo = Math.floor(Date.now() / 1000) - 1 * 24 * 60 * 60;
 
-  const subscription = ndk.subscribe(filters, { closeOnEose: true });
-  subscription.on("event", (event) => {
-    console.log("Received event:", event);
-    const metadata = metadataMap.get(event.pubkey); // Get metadata for the event's pubkey
-    displayEvent(event, metadata); // Display event with metadata
-  });
-}
+  // Function to fetch events and metadata for a batch of pubkeys
+  const fetchBatch = async (batch) => {
+    try {
+      const eventsPromises = batch.map((pubkey) =>
+        ndk.fetchEvents({
+          kinds: [1], // Kind 1 for text events
+          authors: [pubkey],
+          since: oneWeekAgo,
+        })
+      );
 
-export function handleFetchedEvents(events, metadataMap) {
-  events.forEach((event) => {
-    const metadata = metadataMap.get(event.pubkey);
-    displayEvent(event, metadata);
-  });
+      const metadataPromises = batch.map((pubkey) =>
+        ndk.fetchEvent({
+          kinds: [0], // Kind 0 for metadata
+          authors: [pubkey],
+          limit: 1,
+        })
+      );
+
+      const eventsResults = await Promise.all(eventsPromises);
+      const metadataResults = await Promise.all(metadataPromises);
+
+      eventsResults.forEach((events, index) => {
+        const metadata = metadataResults[index];
+        if (events && metadata) {
+          storeMetadata(batch[index], metadata); // Store metadata for the pubkey
+          events.forEach((event) => {
+            displayEvent(event); // Display event with associated metadata
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching events and metadata in batch:", error);
+    }
+  };
+
+  // Process pubkeys in batches
+  for (let i = 0; i < pubkeys.length; i += BATCH_SIZE) {
+    const batch = pubkeys.slice(i, i + BATCH_SIZE);
+    await fetchBatch(batch); // Wait for the batch to be processed before moving to the next
+  }
+
+  console.log("All batches processed");
 }

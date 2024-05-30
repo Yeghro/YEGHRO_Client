@@ -1,21 +1,20 @@
-import NDK, { NDKNip07Signer, NDKRelayList } from "@nostr-dev-kit/ndk";
+import NDK, { NDKNip07Signer } from "@nostr-dev-kit/ndk";
 import { showConnectionStatus } from "./ui/index.js"; // Adjusted import path
-import {
-  handleFetchedEvents,
-  subscribeToEventsForFollows,
-} from "./eventManager.js";
+import { subscribeToEventsForFollows } from "./subscriptions.js";
+import { displayActiveUserProfile } from "./ui/profileDisplay.js"; // Import display function
 
 export let ndk; // Module-level variable for NDK instance
 export let nip07signer; // Module-level variable for the signer
 
 const DEFAULT_RELAYS = ["wss://nostrpub.yeghro.site", "wss://relay.damus.io"];
-const metadataMap = new Map(); // Map to store metadata
 
 export async function initializeNDK() {
   if (ndk) {
     console.log("NDK instance already initialized");
     return ndk;
   }
+
+  console.log("Initializing NDK instance...");
 
   nip07signer = new NDKNip07Signer({
     waitTimeout: 2000, // waitTimeout should be in milliseconds
@@ -50,34 +49,17 @@ export async function initializeNDK() {
       limit: 1,
     });
 
+    // Fetch the active user's follow list
+    const follows = await user.follows();
+    const followCount = follows ? follows.size : 0;
+
     if (userMetadata) {
       console.log("Active user's metadata:", userMetadata);
-      metadataMap.set(user.pubkey, userMetadata); // Store user metadata
+      displayActiveUserProfile(userMetadata, followCount); // Display active user's profile
     }
 
-    // Fetch the active user's follow list and subscribe to their events
-    const follows = await user.follows();
-    console.log("Active user's follows:", follows);
-
-    // Extract public keys from the follow list
-    const pubkeys = Array.from(follows).map((follow) => follow.pubkey);
-
-    // Fetch metadata for the follow list and store in metadataMap
-    for (const pubkey of pubkeys) {
-      const followMetadata = await ndk.fetchEvent({
-        kinds: [0], // Kind 0 for metadata
-        authors: [pubkey],
-        limit: 1,
-      });
-
-      if (followMetadata) {
-        console.log(`Fetched metadata for pubkey ${pubkey}:`, followMetadata);
-        metadataMap.set(pubkey, followMetadata); // Store follow metadata
-      }
-    }
-
-    // Subscribe to events from the follow list
-    subscribeToEventsForFollows(ndk, pubkeys, metadataMap);
+    // Subscribe to events for follows
+    await subscribeToEventsForFollows(ndk);
   } catch (error) {
     console.error("Error during initialization:", error);
     showConnectionStatus("Error during initialization");

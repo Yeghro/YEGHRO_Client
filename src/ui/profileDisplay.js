@@ -1,5 +1,3 @@
-import { isValidURI } from "./utils.js";
-
 export function displayProfile(event) {
   console.log("Profile Event content:", event.content); // Log the profile event content
 
@@ -31,19 +29,11 @@ export function displayProfile(event) {
   const pictureElement = document.createElement("div");
   pictureElement.className = "picture";
   if (profileData.picture) {
-    try {
-      const img = document.createElement("img");
-      if (isValidURI(profileData.picture)) {
-        img.src = profileData.picture;
-        img.style.maxWidth = "150px"; // Set maximum width
-        img.style.maxHeight = "150px"; // Set maximum height
-        pictureElement.appendChild(img);
-      } else {
-        console.warn("Invalid profile image URI:", profileData.picture);
-      }
-    } catch (error) {
-      console.error("Error with profile image URL:", error);
-    }
+    const img = document.createElement("img");
+    img.src = profileData.picture;
+    img.style.maxWidth = "150px"; // Set maximum width
+    img.style.maxHeight = "150px"; // Set maximum height
+    pictureElement.appendChild(img);
   }
 
   profileElement.appendChild(authorElement);
@@ -51,4 +41,35 @@ export function displayProfile(event) {
   profileElement.appendChild(aboutElement);
   profileElement.appendChild(pictureElement);
   feed.appendChild(profileElement);
+}
+
+export function displayActiveUserProfile(metadata, followCount) {
+  const profileInfo = document.getElementById("profileInfo");
+  const profilePicture = document.getElementById("profilePicture");
+  const userName = document.getElementById("userName");
+  const followCountElement = document.getElementById("followCount");
+
+  if (!metadata) {
+    console.error("No metadata provided for active user profile display.");
+    return;
+  }
+
+  let profileData;
+  try {
+    profileData = JSON.parse(metadata.content);
+  } catch (error) {
+    console.error("Error parsing active user profile metadata:", error);
+    profileData = {};
+  }
+
+  if (profileData.picture) {
+    profilePicture.src = profileData.picture;
+  } else {
+    profilePicture.src = ""; // Default or placeholder image
+  }
+
+  userName.textContent = profileData.name || "No Name Provided";
+  followCountElement.textContent = `Follows: ${followCount || 0}`;
+
+  profileInfo.style.display = "block"; // Show the profile info section
 }

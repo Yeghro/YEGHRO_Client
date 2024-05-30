@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>YEGHRO Nostr Client</title>
-    <link rel="stylesheet" href="./src//style.css" />
+    <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
     <div class="sidebar">
@@ -12,9 +12,14 @@
       <p>Click below to login:</p>
       <button id="loginButton">Login</button>
       <p id="connectionStatus"></p>
+      <div id="profileInfo" style="display: none;">
+        <img id="profilePicture" src="" alt="Profile Picture" style="max-width: 150px; max-height: 150px;" />
+        <p id="userName"></p>
+        <p id="followCount"></p>
+      </div>
     </div>
     <div class="feed" id="feed"></div>
 
-    <script src="./src//main.js" type="module"></script>
+    <script src="./src/main.js" type="module"></script>
   </body>
 </html>

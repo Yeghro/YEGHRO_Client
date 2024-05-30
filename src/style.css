@@ -1,44 +1,55 @@
 body {
   font-family: Arial, sans-serif;
   display: flex;
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  overflow: hidden;
 }
 
 .sidebar {
-  width: 300px;
-  background-color: #f0f0f0;
+  width: 250px;
   padding: 20px;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-}
-
-.sidebar h2 {
-  margin-top: 0;
+  border-right: 1px solid #ddd;
 }
 
 .feed {
-  flex: 1;
-  overflow-y: auto;
+  flex-grow: 1;
   padding: 20px;
-  background-color: #fafafa; /* Added background color */
+  overflow-y: auto;
 }
 
-.event {
-  background-color: #fff;
+.card {
   border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.event .author {
+.card-header {
+  display: flex;
+  align-items: center;
+}
+
+.profile-picture {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
   font-weight: bold;
-  margin-bottom: 5px;
 }
 
-.event .content {
-  margin-top: 5px;
+.post-date {
+  color: #888;
+  font-size: 0.9em;
+}
+
+.card-content {
+  margin-top: 10px;
 }
