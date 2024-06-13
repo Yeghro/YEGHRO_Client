@@ -1,19 +1,14 @@
 import NDK, { NDKNip07Signer } from "@nostr-dev-kit/ndk";
 import { showConnectionStatus } from "./ui/index.js"; // Adjusted import path
-import { subscribeToEventsForFollows } from "./subscriptions.js";
-import { displayActiveUserProfile } from "./ui/profileDisplay.js"; // Import display function
+import { displayActiveUserProfile } from "./ui/index.js"; // Import display function
 
-export let ndk; // Module-level variable for NDK instance
 export let nip07signer; // Module-level variable for the signer
+export let ndk; // Module-level variable for NDK instance
+export let user; // Module-level variable for user
 
-const DEFAULT_RELAYS = ["wss://nostrpub.yeghro.site", "wss://relay.damus.io"];
+const DEFAULT_RELAYS = ["wss://relay.primal.net", "wss://purplepag.es"];
 
 export async function initializeNDK() {
-  if (ndk) {
-    console.log("NDK instance already initialized");
-    return ndk;
-  }
-
   console.log("Initializing NDK instance...");
 
   nip07signer = new NDKNip07Signer({
@@ -24,17 +19,15 @@ export async function initializeNDK() {
     explicitRelayUrls: DEFAULT_RELAYS,
     signer: nip07signer,
     autoConnectUserRelays: false, // We will handle connection manually
-    autoFetchUserMutelist: true, // Ensure auto fetch is enabled
+    autoFetchUserMutelist: true,
   });
 
-  try {
-    // Ensure the signer is ready and retrieve the user
-    await ndk.signer.blockUntilReady();
-    const user = await ndk.signer.user();
-    console.log("User is ready:", user);
+  // Ensure the signer is ready and retrieve the user
+  await ndk.signer.blockUntilReady();
+  user = await ndk.signer.user();
+  console.log("User is ready:", user);
 
-    // Set the active user
-    ndk.activeUser = user;
+  try {
     console.log("Active user set in NDK:", ndk.activeUser);
 
     // Initial connection to default relays
@@ -57,13 +50,10 @@ export async function initializeNDK() {
       console.log("Active user's metadata:", userMetadata);
       displayActiveUserProfile(userMetadata, followCount); // Display active user's profile
     }
-
-    // Subscribe to events for follows
-    await subscribeToEventsForFollows(ndk);
   } catch (error) {
     console.error("Error during initialization:", error);
     showConnectionStatus("Error during initialization");
   }
 
-  return ndk;
+  return { ndk, user };
 }

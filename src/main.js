@@ -1,10 +1,10 @@
 import {
   setupLoginButton,
   showConnectionStatus,
-  displayEvent,
-  displayProfile,
+  // displayEvent,
+  // displayProfile,
 } from "./ui/index.js";
-import { initializeNDK } from "./nostr.js";
+import { initializeNDK, ndk, user } from "./nostr.js";
 import { subscribeToEventsForFollows } from "./subscriptions.js";
 
 async function handleLoginButtonClick() {
@@ -22,18 +22,7 @@ async function handleLoginButtonClick() {
   messageElement.textContent = "Go Explore!"; // You can change this message as desired
   sidebar.appendChild(messageElement);
 
-  const subscription = await subscribeToEventsForFollows();
-
-  if (subscription) {
-    subscription.on("event", (event) => {
-      console.log("Received event:", event);
-      if (event.kind === 1) {
-        displayEvent(event);
-      } else if (event.kind === 0) {
-        displayProfile(event);
-      }
-    });
-  }
+  await subscribeToEventsForFollows(ndk, user);
 }
 
 setupLoginButton(handleLoginButtonClick);

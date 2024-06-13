@@ -1,53 +1,11 @@
-export function displayProfile(event) {
-  console.log("Profile Event content:", event.content); // Log the profile event content
-
-  // Parse the profile content assuming it is JSON
-  let profileData;
-  try {
-    profileData = JSON.parse(event.content);
-  } catch (error) {
-    console.error("Error parsing profile event content:", error);
-    return;
-  }
-
-  const feed = document.getElementById("feed");
-  const profileElement = document.createElement("div");
-  profileElement.className = "profile";
-
-  const authorElement = document.createElement("div");
-  authorElement.className = "author";
-  authorElement.textContent = event.pubkey;
-
-  const nameElement = document.createElement("div");
-  nameElement.className = "name";
-  nameElement.textContent = profileData.name || "No Name Provided";
-
-  const aboutElement = document.createElement("div");
-  aboutElement.className = "about";
-  aboutElement.textContent = profileData.about || "No About Information";
-
-  const pictureElement = document.createElement("div");
-  pictureElement.className = "picture";
-  if (profileData.picture) {
-    const img = document.createElement("img");
-    img.src = profileData.picture;
-    img.style.maxWidth = "150px"; // Set maximum width
-    img.style.maxHeight = "150px"; // Set maximum height
-    pictureElement.appendChild(img);
-  }
-
-  profileElement.appendChild(authorElement);
-  profileElement.appendChild(nameElement);
-  profileElement.appendChild(aboutElement);
-  profileElement.appendChild(pictureElement);
-  feed.appendChild(profileElement);
-}
-
 export function displayActiveUserProfile(metadata, followCount) {
   const profileInfo = document.getElementById("profileInfo");
   const profilePicture = document.getElementById("profilePicture");
   const userName = document.getElementById("userName");
   const followCountElement = document.getElementById("followCount");
+  const welcomeMessage = document.querySelector(".sidebar h2");
+  const loginButton = document.getElementById("loginButton");
+  const clickBelowMsg = document.querySelector(".sidebar p");
 
   if (!metadata) {
     console.error("No metadata provided for active user profile display.");
@@ -65,11 +23,23 @@ export function displayActiveUserProfile(metadata, followCount) {
   if (profileData.picture) {
     profilePicture.src = profileData.picture;
   } else {
-    profilePicture.src = ""; // Default or placeholder image
+    profilePicture.src =
+      "https://yeghro.site/wp-content/uploads/2024/03/nostr-300x300.webp"; // Default or placeholder image
   }
+
+  // Set the default image if the provided picture fails to load
+  profilePicture.onerror = function () {
+    this.src =
+      "https://yeghro.site/wp-content/uploads/2024/03/nostr-300x300.webp"; // Default image URL
+  };
 
   userName.textContent = profileData.name || "No Name Provided";
   followCountElement.textContent = `Follows: ${followCount || 0}`;
 
   profileInfo.style.display = "block"; // Show the profile info section
+
+  // Hide welcome message and login button
+  welcomeMessage.style.display = "none";
+  loginButton.style.display = "none";
+  clickBelowMsg.style.display = "none";
 }

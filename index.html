@@ -4,22 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>YEGHRO Nostr Client</title>
+    <link href="./node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
-    <div class="sidebar">
-      <h2>Hi, Welcome to YEGHRO Nostr client!</h2>
-      <p>Click below to login:</p>
-      <button id="loginButton">Login</button>
-      <p id="connectionStatus"></p>
-      <div id="profileInfo" style="display: none;">
-        <img id="profilePicture" src="" alt="Profile Picture" style="max-width: 150px; max-height: 150px;" />
-        <p id="userName"></p>
-        <p id="followCount"></p>
+    <div class="container-fluid h-100">
+      <div class="row flex-nowrap h-100">
+        <div class="col-12 col-md-3 sidebar">
+          <h2>Hi, Welcome to YEGHRO Nostr client!</h2>
+          <p>Click below to login:</p>
+          <button id="loginButton" class="btn btn-primary">Login</button>
+          <p id="connectionStatus"></p>
+          <div id="profileInfo" class="hidden">
+            <img id="profilePicture" src="https://yeghro.site/wp-content/uploads/2024/03/nostr-300x300.webp" alt="Profile Picture" class="profile-picture" />
+            <p id="userName"></p>
+            <p id="followCount"></p>
+          </div>
+        </div>
+        <div class="col-12 col-md-9 feed" id="feed"></div>
       </div>
     </div>
-    <div class="feed" id="feed"></div>
 
+    <script src="./node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="./src/main.js" type="module"></script>
   </body>
 </html>

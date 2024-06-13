@@ -1,18 +1,9 @@
-import { displayEvent, displayProfile } from "./ui/index.js"; // Adjusted import path
+import { displayEvent, storeMetadata } from "./ui/index.js"; // Adjusted import path
 import { NDKKind } from "@nostr-dev-kit/ndk"; // Assuming this is how NDKKind is imported
-import { fetchEventsAndMetadataInBatches } from "./eventManager.js";
 
-const BATCH_SIZE = 10; // Define a suitable batch size
-
-export async function subscribeToEventsForFollows(ndk) {
+export async function subscribeToEventsForFollows(ndk, user) {
   if (!ndk) {
     throw new Error("NDK instance is not initialized");
-  }
-
-  const user = ndk.activeUser;
-  if (!user) {
-    console.error("Active user is not set, waiting for initialization...");
-    await ndk.signer.blockUntilReady(); // Ensure the signer is ready
   }
 
   try {
@@ -31,57 +22,71 @@ export async function subscribeToEventsForFollows(ndk) {
     // Calculate the timestamp for one day ago
     const oneDayAgo = Math.floor(Date.now() / 1000) - 1 * 24 * 60 * 60;
 
-    // Prepare filters for subscribing to both kind 0 (Metadata) and kind 1 (Text) events
-    const filters = pubkeys.map((pubkey) => ({
-      kinds: [NDKKind.Metadata, NDKKind.Text],
-      authors: [pubkey],
-      since: oneDayAgo,
-    }));
-
-    console.log("Prepared filters for subscribing to events:", filters);
-
-    // Ensure filters is an array
-    const filtersArray = Array.isArray(filters) ? filters : [filters];
-
-    // Function to create subscriptions in batches
-    const createSubscriptionBatch = (batch) => {
-      const subscription = ndk.subscribe(batch, { closeOnEose: true });
-      console.log("Subscription started with filters:", batch);
-
-      // Add detailed event logging
-      subscription.on("event", (event) => {
-        console.log("Received event from subscription:", event);
-        if (event.kind === NDKKind.Text) {
-          console.log("Text Event content:", event.content);
-          displayEvent(event);
-        } else if (event.kind === NDKKind.Metadata) {
-          console.log("Metadata Event content:", event.content);
-          displayProfile(event);
-        }
-      });
-
-      subscription.on("eose", () => {
-        console.log("Subscription ended (EOSE received)");
-      });
-
-      subscription.on("error", (error) => {
-        console.error("Subscription error:", error);
-      });
-
-      return subscription;
+    // Prepare a filter for subscribing to kind 0 (Metadata) events
+    const metadataFilter = {
+      kinds: [NDKKind.Metadata],
+      authors: pubkeys,
     };
 
-    // Process filters in batches
-    for (let i = 0; i < filtersArray.length; i += BATCH_SIZE) {
-      const batch = filtersArray.slice(i, i + BATCH_SIZE);
-      createSubscriptionBatch(batch);
-    }
+    console.log(
+      "Prepared filter for subscribing to metadata events:",
+      metadataFilter
+    );
 
-    console.log("All subscriptions started");
+    // Create a subscription for metadata
+    const metadataSubscription = ndk.subscribe([metadataFilter], {
+      closeOnEose: true,
+    });
+    console.log("Metadata subscription started with filter:", metadataFilter);
 
-    // Fetch events and metadata in batches
-    await fetchEventsAndMetadataInBatches(ndk, pubkeys);
+    // Handle metadata events
+    metadataSubscription.on("event", (event) => {
+      storeMetadata(event.pubkey, event);
+    });
+
+    metadataSubscription.on("eose", () => {
+      console.log("Metadata subscription ended (EOSE received)");
+      // Once metadata subscription is complete, subscribe to text events
+      setTimeout(() => subscribeToTextEvents(ndk, pubkeys, oneDayAgo), 1000); // Delay to ensure all metadata events are processed
+    });
+
+    metadataSubscription.on("error", (error) => {
+      console.error("Metadata subscription error:", error);
+    });
   } catch (error) {
     console.error("Error subscribing to events for follows:", error);
+  }
+}
+
+// Function to subscribe to text (kind 1) events
+async function subscribeToTextEvents(ndk, pubkeys, since) {
+  try {
+    // Prepare a filter for subscribing to kind 1 (Text) events
+    const textFilter = {
+      kinds: [NDKKind.Text],
+      authors: pubkeys,
+      since: since,
+    };
+
+    console.log("Prepared filter for subscribing to text events:", textFilter);
+
+    // Create a subscription for text events
+    const textSubscription = ndk.subscribe([textFilter], { closeOnEose: true });
+    console.log("Text subscription started with filter:", textFilter);
+
+    // Handle text events
+    textSubscription.on("event", (event) => {
+      displayEvent(event);
+    });
+
+    textSubscription.on("eose", () => {
+      console.log("Text subscription ended (EOSE received)");
+    });
+
+    textSubscription.on("error", (error) => {
+      console.error("Text subscription error:", error);
+    });
+  } catch (error) {
+    console.error("Error subscribing to text events:", error);
   }
 }
